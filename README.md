@@ -1,4 +1,184 @@
-# AI Affiliate — Value Content & Shopee Affiliate System
+# AI Affiliate — Shopee Affiliate Link Builder
+
+Công cụ tạo link affiliate Shopee có tracking, shortlink ẩn danh và bảo mật cao.
+
+> **Content Dashboard** (crawl RSS → AI generate → đăng Facebook) được ẩn theo mặc định.  
+> Bật bằng cách đặt `VITE_ENABLE_DASHBOARD=true` trong `.env`.
+
+---
+
+## Tính năng chính
+
+### 🛍️ Shopee Affiliate Link Builder
+- Dán link `https://s.shopee.vn/...` từ app Shopee → tự động build affiliate URL với `affiliate_id` + `sub_id` (timestamp)
+- **Affiliate URL không bao giờ hiển thị** trên giao diện — đảm bảo `affiliate_id` không bị lộ
+- Tự động tạo **shortlink ẩn danh** (`/r/{token}`) ngay sau khi paste
+- Nút **Copy link** — copy shortlink vào clipboard
+- Nút **Truy cập** — mở shortlink, có cooldown 5 giây để tránh click liên tục
+- Bảo vệ spam: rate limit 50 request/phút, chặn multi-link, chặn import file, chặn race condition
+
+### 🔗 Shortlink Engine
+- `POST /shorten` — nhận affiliate URL, sinh token 8 ký tự hex (`secrets.token_hex`), lưu SQLite
+- `GET /r/{token}` — redirect 302 đến affiliate URL; URL gốc không bao giờ trả về response body
+- Token là khoá duy nhất, mỗi lần paste link mới tạo token mới
+
+### 🗄️ DB Viewer *(bật khi `VITE_ENABLE_DASHBOARD=true`)*
+- Xem toàn bộ bảng `short_links` trong SQLite trực tiếp trên UI
+- Hiển thị: ID, token, short URL, affiliate URL (click để mở rộng), thời gian tạo
+- Giải thích cơ chế lưu trữ 4 bước
+
+### 📰 Content Dashboard *(bật khi `VITE_ENABLE_DASHBOARD=true`)*
+- Crawl RSS tự động (mặc định mỗi 30 phút)
+- AI sinh nội dung Facebook từ bài viết crawl được (OpenAI)
+- Duyệt / Từ chối / Đăng bài lên Facebook Page
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI + SQLAlchemy + SQLite |
+| AI | OpenAI (`gpt-4o-mini`) |
+| Scheduler | APScheduler |
+| Frontend | React (Vite) + Tailwind CSS |
+
+---
+
+## Cấu trúc thư mục
+
+```
+AI Affilate/
+├── backend/
+│   ├── main.py
+│   ├── database.py
+│   ├── models.py          ← Post, ShortLink
+│   ├── schemas.py
+│   ├── routers/
+│   │   ├── shopee.py      ← GET /shopee/config
+│   │   ├── shortlink.py   ← POST /shorten · GET /r/{token} · GET /shortlinks
+│   │   ├── crawl.py
+│   │   ├── generate.py
+│   │   ├── posts.py
+│   │   └── facebook.py
+│   ├── services/
+│   │   ├── rss_crawler.py
+│   │   ├── ai_service.py
+│   │   ├── facebook_service.py
+│   │   └── scheduler.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx              ← Tab navigation
+│   │   ├── api.js
+│   │   └── components/
+│   │       ├── Home.jsx         ← Shopee Affiliate Link Builder
+│   │       ├── DBViewer.jsx     ← DB Viewer (admin)
+│   │       ├── PostCard.jsx
+│   │       ├── PostList.jsx
+│   │       └── Controls.jsx
+│   ├── package.json
+│   └── vite.config.js
+├── .env
+├── .gitignore
+├── start-dev.bat
+└── README.md
+```
+
+---
+
+## Cài đặt & Chạy
+
+### 1. Cấu hình `.env`
+
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+
+FB_PAGE_ID=your_page_id
+FB_ACCESS_TOKEN=your_page_access_token
+
+RSS_URLS=https://vnexpress.net/rss/tin-moi-nhat.rss
+AUTO_CRAWL_INTERVAL_MINUTES=30
+
+DATABASE_URL=sqlite:///./posts.db
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Shopee Affiliate (lấy từ Shopee Affiliate Portal)
+SHOPEE_AFFILIATE_ID=your_affiliate_id
+
+# Bật Content Dashboard + DB Viewer (chỉ dùng khi local)
+VITE_ENABLE_DASHBOARD=false
+```
+
+### 2. Chạy nhanh (Windows)
+
+```bat
+start-dev.bat
+```
+
+Script tự động: dừng Google Drive sync, cài `npm install` nếu chưa có, khởi động Vite + Uvicorn.
+
+### 3. Chạy thủ công
+
+**Backend:**
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Mở trình duyệt: [http://localhost:5173](http://localhost:5173)  
+API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/shopee/config` | Trả về `affiliate_id` (không nhạy cảm) |
+| POST | `/shorten` | Tạo shortlink từ affiliate URL |
+| GET | `/r/{token}` | Redirect 302 đến affiliate URL |
+| GET | `/shortlinks` | Liệt kê tất cả shortlink (admin) |
+| GET | `/crawl` | Crawl RSS thủ công |
+| POST | `/generate` | Generate content AI |
+| GET | `/posts` | Danh sách bài viết |
+| POST | `/posts/approve/{id}` | Duyệt bài |
+| POST | `/posts/publish/{id}` | Đăng Facebook |
+
+---
+
+## Luồng Shortlink
+
+```
+Paste link Shopee
+    → build affiliate URL (an_redir + affiliate_id + sub_id)
+    → POST /shorten → token (8 hex chars) lưu SQLite
+    → Copy / Truy cập dùng https://domain/r/{token}
+    → GET /r/{token} → 302 redirect → affiliate URL
+                         (affiliate_id không bao giờ lộ ra ngoài)
+```
+
+---
+
+## Bảo mật
+
+- `affiliate_id` chỉ tồn tại trong `SHOPEE_AFFILIATE_ID` env + DB server, không bao giờ trả về frontend
+- Shortlink dùng `secrets.token_hex` (cryptographically secure)
+- Rate limit: 50 request/phút mỗi client
+- Chặn paste nhiều link, import file, kéo thả
+- Cooldown 5 giây sau mỗi lần bấm "Truy cập"
+
 
 Hệ thống gồm 2 tính năng chính:
 - 🛍️ **Shopee Affiliate Link Builder** — tạo link affiliate tracking từ link sản phẩm Shopee
