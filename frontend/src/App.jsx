@@ -1,45 +1,76 @@
 import { useState } from 'react'
 import Controls from './components/Controls'
 import PostList from './components/PostList'
-import GitHubPanel from './components/GitHubPanel'
+import Home from './components/Home'
+import DBViewer from './components/DBViewer'
+
+// Bật Content Dashboard bằng cách đặt VITE_ENABLE_DASHBOARD=true trong file .env
+const ENABLE_DASHBOARD = import.meta.env.VITE_ENABLE_DASHBOARD === 'true'
+
+const TABS = [
+  { id: 'home', label: '🛍️ Shopee Affiliate' },
+  ...(ENABLE_DASHBOARD ? [
+    { id: 'dashboard', label: '📰 Content Dashboard' },
+    { id: 'db', label: '🗄️ DB Viewer' },
+  ] : []),
+]
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('home')
   const [refreshSignal, setRefreshSignal] = useState(0)
-  const [showGitHub, setShowGitHub] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">📰 Value Content Dashboard</h1>
-            <p className="text-sm text-gray-500">Crawl RSS → AI Generate → Duyệt → Đăng Facebook</p>
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Top bar */}
+          <div className="flex items-center justify-between py-3 gap-3">
+            <span className="text-base font-bold text-gray-900 whitespace-nowrap">AI Affiliate</span>
+
+            {/* Dashboard controls — only show on dashboard tab */}
+            <div className="flex items-center gap-2">
+              {ENABLE_DASHBOARD && activeTab === 'dashboard' && (
+                <Controls onRefresh={() => setRefreshSignal((s) => s + 1)} />
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Controls onRefresh={() => setRefreshSignal((s) => s + 1)} />
-            {/* GitHub push button */}
-            <button
-              onClick={() => setShowGitHub(true)}
-              title="Push lên GitHub"
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              GitHub
-            </button>
-          </div>
+
+          {/* Tab navigation */}
+          <nav className="flex gap-1 -mb-px overflow-x-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors focus:outline-none
+                  ${activeTab === tab.id
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <PostList refreshSignal={refreshSignal} />
-      </main>
+      {/* Page content */}
+      {activeTab === 'home' && <Home />}
 
-      {/* GitHub Panel Modal */}
-      {showGitHub && <GitHubPanel onClose={() => setShowGitHub(false)} />}
+      {ENABLE_DASHBOARD && activeTab === 'dashboard' && (
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">Content Dashboard</h2>
+            <p className="text-sm text-gray-500">Crawl RSS → AI Generate → Duyệt → Đăng Facebook</p>
+          </div>
+          <PostList refreshSignal={refreshSignal} />
+        </main>
+      )}
+
+      {ENABLE_DASHBOARD && activeTab === 'db' && <DBViewer />}
+
+
     </div>
   )
 }

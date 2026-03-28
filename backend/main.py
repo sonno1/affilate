@@ -1,13 +1,15 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-load_dotenv()
+# Load .env từ thư mục gốc project (một cấp trên backend/)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 from database import engine, Base
-from routers import crawl, generate, posts, facebook, github
+from routers import crawl, generate, posts, facebook, shopee, shortlink
 from services.scheduler import create_scheduler
 
 # Create all DB tables on startup
@@ -44,7 +46,8 @@ app.include_router(crawl.router)
 app.include_router(generate.router)
 app.include_router(posts.router)
 app.include_router(facebook.router)
-app.include_router(github.router)
+app.include_router(shopee.router)
+app.include_router(shortlink.router)
 
 
 @app.get("/", tags=["health"])

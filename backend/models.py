@@ -3,6 +3,15 @@ from sqlalchemy import Column, Integer, String, Text, Float, DateTime
 from database import Base
 
 
+class ShortLink(Base):
+    __tablename__ = "short_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(16), unique=True, index=True, nullable=False)
+    target_url = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Post(Base):
     __tablename__ = "posts"
 

@@ -3,7 +3,13 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 from models import Post
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _client
 
 SYSTEM_PROMPT = (
     "Bạn là copywriter chuyên viết nội dung Facebook viral cho trang tin tức. "
@@ -27,7 +33,7 @@ def generate_content_for_post(post: Post) -> str:
         title=post.title,
         summary=post.summary or post.title,
     )
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},

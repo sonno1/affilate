@@ -41,36 +41,3 @@ class PublishResponse(BaseModel):
     message: str
 
 
-# ---------------------------------------------------------------------------
-# GitHub schemas
-# ---------------------------------------------------------------------------
-
-class GitHubConfigIn(BaseModel):
-    username: str
-    token: Optional[str] = None   # Omit to keep existing token unchanged
-    repo: str
-    branch: str = "main"
-
-
-class GitHubConfigOut(BaseModel):
-    username: str
-    repo: str
-    branch: str
-    token_set: bool
-
-
-class GitHubPushIn(BaseModel):
-    commit_message: str = "chore: update via AI Affiliate dashboard"
-
-
-class GitHubPushResult(BaseModel):
-    success: bool
-    logs: List[str]
-    repo_url: str
-
-
-class GitHubStatusOut(BaseModel):
-    is_repo: bool
-    branch: str
-    status: str
-    recent_commits: List[str]

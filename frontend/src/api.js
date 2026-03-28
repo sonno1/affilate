@@ -5,6 +5,9 @@ const api = axios.create({
   timeout: 30000,
 })
 
+// axios instance riêng cho các route không có prefix /api
+const raw = axios.create({ timeout: 10000 })
+
 export const crawl = () => api.get('/crawl')
 
 export const generate = () => api.post('/generate')
@@ -21,13 +24,11 @@ export const rejectPost = (id) => api.post(`/posts/reject/${id}`)
 
 export const publishPost = (id) => api.post(`/posts/publish/${id}`)
 
-// GitHub
-export const getGitHubConfig = () => api.get('/github/config')
+// Shopee Affiliate
+export const getShopeeConfig = () => api.get('/shopee/config')
 
-export const saveGitHubConfig = (data) => api.post('/github/config', data)
-
-export const getGitHubStatus = () => api.get('/github/status')
-
-export const pushToGitHub = (data) => api.post('/github/push', data)
+// Shortlink
+export const createShortLink = (url) => raw.post('/shorten', { url })
+export const listShortLinks = (skip = 0, limit = 100) => raw.get('/shortlinks', { params: { skip, limit } })
 
 export default api

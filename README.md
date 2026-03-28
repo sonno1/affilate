@@ -1,6 +1,8 @@
-# Value Content Automation System
+# AI Affiliate — Value Content & Shopee Affiliate System
 
-Hệ thống tự động: **Crawl RSS → AI Generate content → Duyệt bài → Đăng Facebook**.
+Hệ thống gồm 2 tính năng chính:
+- 🛍️ **Shopee Affiliate Link Builder** — tạo link affiliate tracking từ link sản phẩm Shopee
+- 📰 **Content Dashboard** — Crawl RSS → AI Generate content → Duyệt bài → Đăng Facebook
 
 ## Tech Stack
 
@@ -26,24 +28,30 @@ AI Affilate/
 │   │   ├── crawl.py
 │   │   ├── generate.py
 │   │   ├── posts.py
-│   │   └── facebook.py
+│   │   ├── facebook.py
+│   │   ├── shopee.py          ← Shopee Affiliate config endpoint
+│   │   └── github.py          ← GitHub push endpoint
 │   ├── services/
 │   │   ├── rss_crawler.py
 │   │   ├── ai_service.py
 │   │   ├── facebook_service.py
+│   │   ├── github_service.py  ← Git operations
 │   │   └── scheduler.py
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx
+│   │   ├── App.jsx            ← Tab navigation (Home + Dashboard)
 │   │   ├── components/
+│   │   │   ├── Home.jsx       ← Shopee Affiliate Link Builder
 │   │   │   ├── PostCard.jsx
 │   │   │   ├── PostList.jsx
-│   │   │   └── Controls.jsx
+│   │   │   ├── Controls.jsx
+│   │   │   └── GitHubPanel.jsx
 │   │   └── api.js
 │   ├── package.json
 │   └── vite.config.js
 ├── .env.example
+├── .gitignore
 └── README.md
 ```
 
@@ -55,7 +63,24 @@ AI Affilate/
 
 ```bash
 cp .env.example .env
-# Điền OPENAI_API_KEY, FB_PAGE_ID, FB_ACCESS_TOKEN, RSS_URLS
+```
+
+Điền các giá trị vào `.env`:
+
+```env
+OPENAI_API_KEY=sk-...
+FB_PAGE_ID=your_page_id
+FB_ACCESS_TOKEN=your_page_access_token
+RSS_URLS=https://vnexpress.net/rss/tin-moi-nhat.rss
+
+# Shopee Affiliate (lấy từ Shopee Affiliate Portal)
+SHOPEE_AFFILIATE_ID=your_affiliate_id
+
+# GitHub Push (PAT với scope repo + workflow)
+GITHUB_USERNAME=your_username
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+GITHUB_REPO=your-repo-name
+GITHUB_BRANCH=main
 ```
 
 ### 2. Backend
@@ -89,16 +114,51 @@ npm install
 npm run dev
 ```
 
-Dashboard: http://localhost:5173
+Mở trình duyệt: http://localhost:5173
 
 ---
 
-## Luồng sử dụng
+## Tính năng 1 — Shopee Affiliate Link Builder
+
+Trang chủ (tab **🛍️ Shopee Affiliate**):
+
+1. Mở ứng dụng Shopee → chọn sản phẩm → **Chia sẻ → Sao chép liên kết**
+2. Dán link `https://s.shopee.vn/xxxxxx` vào ô nhập liệu
+3. Nhấn một trong hai nút:
+   - **Copy link** — copy link affiliate vào clipboard
+   - **Truy cập** — mở link affiliate trực tiếp trên trình duyệt
+
+### Định dạng link tạo ra
+
+```
+https://s.shopee.vn/an_redir
+  ?origin_link={encoded_product_url}
+  &affiliate_id={SHOPEE_AFFILIATE_ID}
+  &sub_id=fb-reel-{yyyy-MM-dd HH:mm:ss}
+```
+
+`sub_id` được gắn timestamp tại thời điểm nhấn nút giúp phân biệt từng lần click.
+
+---
+
+## Tính năng 2 — Content Dashboard
+
+Tab **📰 Content Dashboard**:
 
 1. **Crawl Now** — lấy bài từ các RSS feed đã cấu hình
 2. **Generate All** — OpenAI tạo nội dung Facebook cho các bài `pending`
-3. Xem từng bài trong dashboard — nhấn **Duyệt** hoặc **Từ chối**
-4. Nhấn **Đăng Facebook** để publish bài `approved` lên Page
+3. Xem từng bài — nhấn **Duyệt** hoặc **Từ chối**
+4. Nhấn **🚀 Đăng Facebook** để publish bài `approved` lên Page
+
+---
+
+## Tính năng 3 — GitHub Push
+
+Nhấn nút **GitHub** trên header để mở panel:
+
+1. Nhập GitHub Username, Personal Access Token (scope: `repo` + `workflow`), Repository, Branch
+2. Nhấn **Lưu cấu hình**
+3. Nhập commit message → nhấn **Push to GitHub**
 
 ---
 
@@ -113,6 +173,11 @@ Dashboard: http://localhost:5173
 | `POST` | `/posts/approve/{id}` | Duyệt bài |
 | `POST` | `/posts/reject/{id}` | Từ chối bài |
 | `POST` | `/posts/publish/{id}` | Đăng lên Facebook |
+| `GET` | `/shopee/config` | Lấy Shopee affiliate config |
+| `GET` | `/github/config` | Lấy GitHub config |
+| `POST` | `/github/config` | Lưu GitHub credentials |
+| `GET` | `/github/status` | Git status của project |
+| `POST` | `/github/push` | Stage + commit + push lên GitHub |
 
 ---
 
