@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb" }
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/shopee/(.*)", "dest": "/api/index.py" },
+    { "src": "/shorten", "dest": "/api/index.py" },
+    { "src": "/shortlinks", "dest": "/api/index.py" },
+    { "src": "/r/(.*)", "dest": "/api/index.py" },
+    { "src": "/posts(.*)", "dest": "/api/index.py" },
+    { "src": "/crawl(.*)", "dest": "/api/index.py" },
+    { "src": "/generate(.*)", "dest": "/api/index.py" },
+    { "src": "/facebook(.*)", "dest": "/api/index.py" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

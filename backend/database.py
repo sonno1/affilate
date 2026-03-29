@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./posts.db")
+# Trên Vercel, filesystem là read-only ngoại trừ /tmp
+_default_db = "sqlite:////tmp/posts.db" if os.getenv("VERCEL") else "sqlite:///./posts.db"
+DATABASE_URL = os.getenv("DATABASE_URL", _default_db)
 
 engine = create_engine(
     DATABASE_URL,

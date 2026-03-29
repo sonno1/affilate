@@ -20,9 +20,12 @@ _scheduler = create_scheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _scheduler.start()
+    # Vercel là serverless — không hỗ trợ background scheduler
+    if not os.getenv("VERCEL"):
+        _scheduler.start()
     yield
-    _scheduler.shutdown(wait=False)
+    if not os.getenv("VERCEL") and _scheduler.running:
+        _scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
