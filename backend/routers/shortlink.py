@@ -1,6 +1,7 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from html import escape
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
@@ -59,8 +60,9 @@ def shorten(body: ShortenRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/r/{token}")
-def redirect_shortlink(token: str, db: Session = Depends(get_db)):
-    """Redirect tới affiliate URL ứng với token. Không trả về URL trong response body."""
+def redirect_shortlink(token: str, request: Request, db: Session = Depends(get_db)):
+    """Trả về HTML page với OG tags + JS redirect. Facebook scraper đọc được OG data,
+    người dùng thì redirect ngay lập tức qua JS."""
     # Validate token format (chỉ hex)
     if not token.isalnum() or len(token) > 32:
         raise HTTPException(status_code=404, detail="Link không tồn tại.")
@@ -69,7 +71,34 @@ def redirect_shortlink(token: str, db: Session = Depends(get_db)):
     if not entry:
         raise HTTPException(status_code=404, detail="Link không tồn tại hoặc đã hết hạn.")
 
-    return RedirectResponse(url=entry.target_url, status_code=302)
+    safe_url = escape(entry.target_url, quote=True)
+    canonical = str(request.url)
+    safe_canonical = escape(canonical, quote=True)
+
+    html = f"""<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Shopee - Sản phẩm khuyến mãi</title>
+  <!-- Open Graph — để Facebook hiện link card -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="{safe_canonical}">
+  <meta property="og:title"       content="Shopee - Sản phẩm khuyến mãi">
+  <meta property="og:description" content="Nhấn để xem và mua sản phẩm với giá ưu đãi trên Shopee.">
+  <meta property="og:image"       content="https://cf.shopee.vn/file/sg-11134004-7rdwy-m1e419s9q8f91f">
+  <meta property="og:site_name"   content="Shopee">
+  <!-- Không để bot lập chỉ mục -->
+  <meta name="robots" content="noindex,nofollow">
+  <!-- Fallback redirect nếu JS tắt -->
+  <meta http-equiv="refresh" content="0;url={safe_url}">
+</head>
+<body>
+  <p>Đang chuyển hướng... <a href="{safe_url}">Nhấn vào đây</a> nếu không tự chuyển.</p>
+  <script>window.location.replace("{safe_url}");</script>
+</body>
+</html>"""
+
+    return HTMLResponse(content=html, status_code=200)
 
 
 @router.get("/shortlinks", response_model=list[ShortLinkRow])
