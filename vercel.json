@@ -1,28 +1,25 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb" }
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11",
+      "maxDuration": 30,
+      "includeFiles": "backend/**"
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/shopee/(.*)", "dest": "/api/index.py" },
-    { "src": "/shorten", "dest": "/api/index.py" },
-    { "src": "/shortlinks", "dest": "/api/index.py" },
-    { "src": "/r/(.*)", "dest": "/api/index.py" },
-    { "src": "/posts(.*)", "dest": "/api/index.py" },
-    { "src": "/crawl(.*)", "dest": "/api/index.py" },
-    { "src": "/generate(.*)", "dest": "/api/index.py" },
-    { "src": "/facebook(.*)", "dest": "/api/index.py" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  },
+  "rewrites": [
+    { "source": "/api/:path*",      "destination": "/api/index.py" },
+    { "source": "/shopee/:path*",   "destination": "/api/index.py" },
+    { "source": "/shorten",         "destination": "/api/index.py" },
+    { "source": "/shortlinks",      "destination": "/api/index.py" },
+    { "source": "/r/:token",        "destination": "/api/index.py" },
+    { "source": "/posts/:path*",    "destination": "/api/index.py" },
+    { "source": "/posts",           "destination": "/api/index.py" },
+    { "source": "/crawl",           "destination": "/api/index.py" },
+    { "source": "/generate",        "destination": "/api/index.py" },
+    { "source": "/facebook/:path*", "destination": "/api/index.py" },
+    { "source": "/:path*",          "destination": "/index.html" }
   ]
 }
