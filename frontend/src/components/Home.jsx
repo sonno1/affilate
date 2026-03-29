@@ -109,10 +109,30 @@ export default function Home() {
     const urlToCopy = token
       ? `${window.location.origin}/r/${token}`
       : affiliateUrl  // fallback nếu không tạo được shortlink
-    navigator.clipboard.writeText(urlToCopy).then(() => {
+
+    let success = false
+    // Thử Clipboard API trước (yêu cầu HTTPS + focus)
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(urlToCopy)
+        success = true
+      } catch { /* fall through to legacy */ }
+    }
+    // Fallback: execCommand('copy') cho các trường hợp Clipboard API bị chặn
+    if (!success) {
+      const ta = document.createElement('textarea')
+      ta.value = urlToCopy
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:0;left:0'
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      try { document.execCommand('copy'); success = true } catch { /* silent */ }
+      document.body.removeChild(ta)
+    }
+    if (success) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    })
+    }
   }
 
   // --- Truy cập: mở short URL (tạo nếu chưa có), vẫn giữ hành vi open ---
