@@ -343,7 +343,7 @@ export default function Home() {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 text-green-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>Đã tạo xong link. Vui lòng <strong>copy link</strong> hoặc <strong>truy cập</strong>.</span>
+              <span>Đã tạo xong link. Nhấn <strong>Truy cập</strong> để mở sản phẩm.</span>
             </div>
           )}
 
@@ -352,34 +352,6 @@ export default function Home() {
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Copy link */}
-          <button
-            type="button"
-            onClick={handleCopy}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1
-              ${copied
-                ? 'bg-green-500 text-white focus:ring-green-400'
-                : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white focus:ring-orange-400'
-              }`}
-          >
-            {copied ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Đã Copy!
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M8 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0017.414 6L14 2.586A2 2 0 0012.586 2H8z" />
-                  <path d="M4 6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-1H8a3 3 0 01-3-3V6H4z" />
-                </svg>
-                Copy link
-              </>
-            )}
-          </button>
-
           {/* Truy cập */}
           <button
             type="button"
