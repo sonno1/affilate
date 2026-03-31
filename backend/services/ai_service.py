@@ -41,13 +41,27 @@ Link gốc: {source_link}
 Có ảnh: {has_image}
 URL ảnh: {image_url}
 
+QUY TẮC CAPTION:
+- Công thức: HOOK + EMOTION + CURIOSITY + CTA
+- Độ dài: 80–150 ký tự
+- HOOK mạnh ngay đầu (gây sốc / bất ngờ / tò mò)
+- 1–2 emoji cảm xúc (😱😳🔥🚨😂🐶🐱❤️)
+- KHÔNG nói hết nội dung, giữ tò mò
+- CTA bắt buộc kéo xuống comment ("Chi tiết dưới comment 👇")
+- Auto style theo content_type:
+  + news → tin nóng
+  + drama → tranh cãi
+  + funny → hài hước
+  + animal → dễ thương
+  + other → tổng hợp
+
 Trả về ĐÚNG JSON format (không kèm markdown code block):
 {{
   "post": {{
     "type": "image_post" hoặc "background_post",
-    "caption": "caption viral 100-150 ký tự...",
+    "caption": "caption viral 80-150 ký tự theo công thức HOOK+EMOTION+CURIOSITY+CTA",
     "image_url": "URL ảnh nếu có, null nếu không",
-    "background_title": "TIÊU ĐỀ ALL CAPS nếu background_post, null nếu image_post"
+    "background_title": "TIÊU ĐỀ ALL CAPS 5-10 từ nếu background_post, null nếu image_post"
   }},
   "comment": {{
     "text": "Chi tiết tại đây 👇\\n{source_link}"
