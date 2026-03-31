@@ -40,6 +40,10 @@ class CrawlUrlResponse(BaseModel):
     summary: str
     content: str | None = None
     message: str
+    # Viral content fields
+    viral: Optional[dict] = None  # {post, comment, metadata} from AI
+    image_url: Optional[str] = None
+    images: Optional[List[str]] = None
 
 
 class UpdateContentRequest(BaseModel):
@@ -54,6 +58,12 @@ class GenerateResponse(BaseModel):
 class PublishResponse(BaseModel):
     post_id: int
     fb_post_id: Optional[str] = None
+    fb_comment_id: Optional[str] = None
     message: str
+
+
+class PublishViralRequest(BaseModel):
+    image_url: Optional[str] = None
+    comment_text: Optional[str] = None
 
 

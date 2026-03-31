@@ -22,7 +22,8 @@ export const approvePost = (id) => api.post(`/posts/approve/${id}`)
 
 export const rejectPost = (id) => api.post(`/posts/reject/${id}`)
 
-export const publishPost = (id) => api.post(`/posts/publish/${id}`)
+export const publishPost = (id, { image_url, comment_text } = {}) =>
+  api.post(`/posts/publish/${id}`, { image_url, comment_text })
 
 // Shopee Affiliate
 export const getShopeeConfig = () => api.get('/shopee/config')
