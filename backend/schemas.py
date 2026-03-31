@@ -30,6 +30,22 @@ class CrawlResponse(BaseModel):
     message: str
 
 
+class CrawlUrlRequest(BaseModel):
+    url: str
+
+
+class CrawlUrlResponse(BaseModel):
+    post_id: int
+    title: str
+    summary: str
+    content: str | None = None
+    message: str
+
+
+class UpdateContentRequest(BaseModel):
+    content: str
+
+
 class GenerateResponse(BaseModel):
     generated: int
     message: str

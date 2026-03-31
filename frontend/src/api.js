@@ -31,4 +31,10 @@ export const getShopeeConfig = () => api.get('/shopee/config')
 export const createShortLink = (url) => raw.post('/shorten', { url })
 export const listShortLinks = (skip = 0, limit = 100) => raw.get('/shortlinks', { params: { skip, limit } })
 
+// Crawl single URL → AI summary
+export const crawlUrl = (url) => api.post('/crawl/url', { url })
+
+// Update post content (review/edit)
+export const updatePostContent = (id, content) => api.put(`/posts/${id}/content`, { content })
+
 export default api

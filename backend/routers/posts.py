@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Post
-from schemas import PostRead, PostList
+from schemas import PostRead, PostList, UpdateContentRequest
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -50,6 +50,20 @@ def reject_post(post_id: int, db: Session = Depends(get_db)):
     if not post:
         raise HTTPException(status_code=404, detail="Post not found.")
     post.status = "rejected"
+    db.commit()
+    db.refresh(post)
+    return post
+
+
+@router.put("/{post_id}/content", response_model=PostRead)
+def update_post_content(post_id: int, body: UpdateContentRequest, db: Session = Depends(get_db)):
+    """Update post content (for user review/edit before publishing)."""
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found.")
+    if post.status == "published":
+        raise HTTPException(status_code=400, detail="Không thể sửa bài đã đăng.")
+    post.content = body.content.strip()
     db.commit()
     db.refresh(post)
     return post

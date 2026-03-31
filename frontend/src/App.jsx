@@ -3,13 +3,13 @@ import Controls from './components/Controls'
 import PostList from './components/PostList'
 import Home from './components/Home'
 import DBViewer from './components/DBViewer'
+import ContentCreator from './components/ContentCreator'
 
 // Bật Content Dashboard bằng cách đặt VITE_ENABLE_DASHBOARD=true trong file .env
 const ENABLE_DASHBOARD = import.meta.env.VITE_ENABLE_DASHBOARD === 'true'
 
 const TABS = [
-  { id: 'home', label: '🛍️ Shopee Affiliate' },
-  ...(ENABLE_DASHBOARD ? [
+  { id: 'home', label: '🛍️ Shopee Affiliate' },  { id: 'content', label: '📝 Tạo bài viết' },  ...(ENABLE_DASHBOARD ? [
     { id: 'dashboard', label: '📰 Content Dashboard' },
     { id: 'db', label: '🗄️ DB Viewer' },
   ] : []),
@@ -57,6 +57,8 @@ export default function App() {
 
       {/* Page content */}
       {activeTab === 'home' && <Home />}
+
+      {activeTab === 'content' && <ContentCreator />}
 
       {ENABLE_DASHBOARD && activeTab === 'dashboard' && (
         <main className="max-w-7xl mx-auto px-4 py-6">
