@@ -1,18 +1,89 @@
 import os
 import json
 from pathlib import Path
-from openai import OpenAI
 from sqlalchemy.orm import Session
 from models import Post
 
-_client = None
+# ---------------------------------------------------------------------------
+# Provider clients (lazy-loaded singletons)
+# ---------------------------------------------------------------------------
+_openai_client = None
+_gemini_client = None
+_anthropic_client = None
 
 
-def _get_client():
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    return _client
+def _get_provider() -> str:
+    """Return active AI provider: openai | gemini | anthropic."""
+    return os.getenv("AI_PROVIDER", "openai").lower().strip()
+
+
+def _get_openai():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+        _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _openai_client
+
+
+def _get_gemini():
+    global _gemini_client
+    if _gemini_client is None:
+        import google.generativeai as genai
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        _gemini_client = genai
+    return _gemini_client
+
+
+def _get_anthropic():
+    global _anthropic_client
+    if _anthropic_client is None:
+        import anthropic
+        _anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    return _anthropic_client
+
+
+# ---------------------------------------------------------------------------
+# Unified chat completion — same interface, any provider
+# ---------------------------------------------------------------------------
+def _chat(system: str, user: str, max_tokens: int = 512, temperature: float = 0.9) -> str:
+    """Send system + user message to the active AI provider. Returns raw text."""
+    provider = _get_provider()
+
+    if provider == "gemini":
+        genai = _get_gemini()
+        model = genai.GenerativeModel(
+            model_name=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            system_instruction=system,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=max_tokens,
+                temperature=temperature,
+            ),
+        )
+        resp = model.generate_content(user)
+        return resp.text.strip()
+
+    elif provider == "anthropic":
+        client = _get_anthropic()
+        resp = client.messages.create(
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+        )
+        return resp.content[0].text.strip()
+
+    else:  # openai (default)
+        client = _get_openai()
+        resp = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        return resp.choices[0].message.content.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -100,16 +171,7 @@ def generate_viral_content(title: str, content: str, source_link: str,
         has_image="Có" if has_image else "Không",
         image_url=image_url or "không có",
     )
-    response = _get_client().chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-        messages=[
-            {"role": "system", "content": VIRAL_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=512,
-        temperature=0.9,
-    )
-    raw = response.choices[0].message.content.strip()
+    raw = _chat(VIRAL_SYSTEM_PROMPT, prompt, max_tokens=512, temperature=0.9)
 
     # Strip markdown code fences if present
     if raw.startswith("```"):
@@ -146,21 +208,12 @@ def generate_viral_content(title: str, content: str, source_link: str,
 
 
 def generate_content_for_post(post: Post) -> str:
-    """Call OpenAI to generate a Facebook post from the RSS entry (simple mode)."""
+    """Generate a Facebook post from the RSS entry (simple mode)."""
     prompt = SIMPLE_USER_TEMPLATE.format(
         title=post.title,
         summary=post.summary or post.title,
     )
-    response = _get_client().chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-        messages=[
-            {"role": "system", "content": SIMPLE_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=256,
-        temperature=0.8,
-    )
-    return response.choices[0].message.content.strip()
+    return _chat(SIMPLE_SYSTEM_PROMPT, prompt, max_tokens=256, temperature=0.8)
 
 
 def generate_pending_posts(db: Session) -> int:
